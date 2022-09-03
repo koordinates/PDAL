@@ -1,0 +1,42 @@
+#!/bin/bash
+set -eu
+
+DEB_VER=$1
+
+apt-get update -y
+apt-get install -y --no-install-recommends \
+    file \
+    libcurl4-openssl-dev \
+    libgeotiff-dev \
+    libgdal-dev \
+    gdal-plugins \
+    gdal-data
+
+cd /mnt/build
+
+# configure
+echo "+++ Configuring..."
+cmake -S /src -B . \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DBUILD_PLUGIN_PGPOINTCLOUD=OFF \
+    -DWITH_TESTS=NO \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCPACK_DEBIAN_PACKAGE_MAINTAINER=craig.destigter@koordinates.com \
+    -DCPACK_DEBIAN_PACKAGE_SHLIBDEPS=ON \
+    -DCPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS=ON \
+    -DCPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS_POLICY=">=" \
+    -DCPACK_DEBIAN_FILE_NAME=DEB-DEFAULT
+
+# compile
+echo "--- Compiling..."
+cmake --build . --verbose
+
+# compile
+echo "--- Testing..."
+ctest --output-on-failure
+
+# build deb
+echo "+++ Packaging..."
+cpack -G DEB -R "${DEB_VER}"
+
+cp -v pdal_*.deb /builds/

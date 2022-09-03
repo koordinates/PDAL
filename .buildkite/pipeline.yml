@@ -1,0 +1,46 @@
+---
+steps:
+  - label: ":debian: {{ matrix.arch }}/{{ matrix.os }}: Build & Package"
+    command: .buildkite/build.sh {{ matrix.image }} {{ matrix.os }}
+    agents:
+      queue: "default_{{ matrix.arch }}"
+    artifact_paths:
+      - "build-*/*"
+    matrix:
+      setup:
+        os:
+          - trixie
+        image:
+          - kx-base-py314-build
+        arch:
+          - amd64
+          - arm64
+
+  - wait: ~
+
+  - label: ":debian: Publish debs"
+    command:
+      - >
+        aptly-upload
+        --aptly-url https://apt-repo.kx.gd
+        --retries 3
+        --repo kx-builds-{{ matrix.os }}
+        --series {{ matrix.os }}
+        build-{{ matrix.os }}/*.deb
+    retry:
+      automatic: true
+    plugins:
+      artifacts#v1.2.0:
+        download:
+          - "build-{{ matrix.os }}/*.deb"
+      docker#v1.4.0:
+        image: "${ECR}/ci-tools"
+        always-pull: true
+        workdir: /src
+        environment:
+          - APTLY_UNAME
+          - APTLY_PASSWD
+    matrix:
+      setup:
+        os:
+          - trixie
