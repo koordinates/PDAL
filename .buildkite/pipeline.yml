@@ -1,0 +1,53 @@
+---
+steps:
+  - label: ":debian: arm64/{{ matrix.os }}: Build & Package"
+    command: .buildkite/build.sh {{ matrix.os }}
+    agents:
+      queue: "default_arm64"
+    artifact_paths:
+      - "build-*/*"
+    matrix:
+      setup:
+        os:
+          - jammy
+
+  - label: ":debian: amd64/{{ matrix.os }}: Build & Package"
+    command: .buildkite/build.sh {{ matrix.os }}
+    agents:
+      queue: "default"
+    artifact_paths:
+      - "build-*/*"
+    matrix:
+      setup:
+        os:
+          - jammy
+
+  - block: "Release?"
+    prompt: "Release to archive?"
+
+  - label: ":debian: Publish debs"
+    command:
+      - >
+        aptly-upload
+        --aptly-url https://apt-repo.kx.gd
+        --retries 3
+        --repo kx-builds-{{ matrix.os }}
+        --series {{ matrix.os }}
+        build-{{ matrix.os }}/*.deb
+    retry:
+      automatic: true
+    plugins:
+      artifacts#v1.2.0:
+        download:
+          - "build-{{ matrix.os }}/*.deb"
+      docker#v1.4.0:
+        image: "${ECR}/ci-tools"
+        always-pull: true
+        workdir: /src
+        environment:
+          - APTLY_UNAME
+          - APTLY_PASSWD
+    matrix:
+      setup:
+        os:
+          - jammy
