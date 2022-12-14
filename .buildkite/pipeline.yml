@@ -21,11 +21,32 @@ steps:
     artifact_paths:
       - "build-focal/*"
 
+  - label: ':debian: arm64/jammy: Build & Package'
+    command: .buildkite/build.sh jammy
+    agents:
+      queue: "default_arm64"
+    artifact_paths:
+      - "build-jammy/*"
+
+  - label: ':debian: amd64/jammy: Build & Package'
+    command: .buildkite/build.sh jammy
+    agents:
+      queue: "default"
+    artifact_paths:
+      - "build-jammy/*"
+
   - block: "Release?"
     prompt: "Release to archive?"
 
   - label: ':debian: Publish debs'
     command:
+      - >
+        aptly-upload
+        --aptly-url https://apt-repo.kx.gd
+        --retries 3
+        --repo kx-builds-jammy
+        --series jammy
+        build-jammy/*.deb
       - >
         aptly-upload
         --aptly-url https://apt-repo.kx.gd
@@ -45,8 +66,7 @@ steps:
     plugins:
       artifacts#v1.2.0:
         download:
-          - "build-bionic/*.deb"
-          - "build-focal/*.deb"
+          - "build-*/*.deb"
       docker#v1.4.0:
         image: "${ECR}/ci-tools"
         always-pull: true
