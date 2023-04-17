@@ -9,8 +9,8 @@ apt-get update -y
 apt-get install -y --no-install-recommends \
     file \
     libcurl4-openssl-dev \
-    libgdal-dev \
-    libgeotiff5 # kx package incorporating libgeotiff-dev
+    libgeotiff-dev \
+    libgdal-dev
 
 declare -a CMAKE_EXTRA=()
 
@@ -27,7 +27,7 @@ CMAKE_VER=3.24.1
 echo "Installing CMake v${CMAKE_VER}/$(uname -m) ..."
 curl --silent --show-error --fail -L \
     "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VER}/cmake-${CMAKE_VER}-linux-$(uname -m).sh" \
-    > /tmp/cmake-install.sh
+    >/tmp/cmake-install.sh
 /bin/sh /tmp/cmake-install.sh --exclude-subdir --prefix=/usr --skip-license
 
 cd /mnt/build
