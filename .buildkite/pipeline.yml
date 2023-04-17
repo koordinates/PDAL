@@ -1,72 +1,45 @@
 ---
 steps:
-  - label: ':debian: amd64/bionic: Build & Package'
-    command: .buildkite/build.sh bionic
-    agents:
-      queue: "default"
-    artifact_paths:
-      - "build-bionic/*"
-
-  - label: ':debian: arm64/focal: Build & Package'
-    command: .buildkite/build.sh focal
+  - label: ":debian: arm64/{{ matrix.os }}: Build & Package"
+    command: .buildkite/build.sh {{ matrix.os }}
     agents:
       queue: "default_arm64"
     artifact_paths:
-      - "build-focal/*"
+      - "build-{{ matrix.os}}/*"
+    matrix:
+      setup:
+        os:
+          - jammy
 
-  - label: ':debian: amd64/focal: Build & Package'
-    command: .buildkite/build.sh focal
+  - label: ":debian: amd64/{{ matrix.os }}: Build & Package"
+    command: .buildkite/build.sh {{ matrix.os }}
     agents:
       queue: "default"
     artifact_paths:
-      - "build-focal/*"
-
-  - label: ':debian: arm64/jammy: Build & Package'
-    command: .buildkite/build.sh jammy
-    agents:
-      queue: "default_arm64"
-    artifact_paths:
-      - "build-jammy/*"
-
-  - label: ':debian: amd64/jammy: Build & Package'
-    command: .buildkite/build.sh jammy
-    agents:
-      queue: "default"
-    artifact_paths:
-      - "build-jammy/*"
+      - "build-{{ matrix.os}}/*"
+    matrix:
+      setup:
+        os:
+          - jammy
 
   - block: "Release?"
     prompt: "Release to archive?"
 
-  - label: ':debian: Publish debs'
+  - label: ":debian: Publish debs"
     command:
       - >
         aptly-upload
         --aptly-url https://apt-repo.kx.gd
         --retries 3
-        --repo kx-builds-jammy
-        --series jammy
-        build-jammy/*.deb
-      - >
-        aptly-upload
-        --aptly-url https://apt-repo.kx.gd
-        --retries 3
-        --repo kx-builds-focal
-        --series focal
-        build-focal/*.deb
-      - >
-        aptly-upload
-        --aptly-url https://apt-repo.kx.gd
-        --retries 3
-        --repo kx-builds-bionic
-        --series bionic
-        build-bionic/*.deb
+        --repo kx-builds-{{ matrix.os }}
+        --series {{ matrix.os }}
+        build-{{ matrix.os }}/*.deb
     retry:
       automatic: true
     plugins:
       artifacts#v1.2.0:
         download:
-          - "build-*/*.deb"
+          - "build-{{ matrix.os }}/*.deb"
       docker#v1.4.0:
         image: "${ECR}/ci-tools"
         always-pull: true
@@ -74,3 +47,7 @@ steps:
         environment:
           - APTLY_UNAME
           - APTLY_PASSWD
+    matrix:
+      setup:
+        os:
+          - jammy

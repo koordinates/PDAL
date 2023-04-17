@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eu
+set -eux
 
 if which ggrep; then
     # so we can run this locally on MacOS
