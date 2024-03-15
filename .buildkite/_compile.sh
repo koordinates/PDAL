@@ -2,6 +2,8 @@
 set -eu
 
 DEB_VER=$1
+# pinned because there's also a 3.8.x in the repos and we still want to build against 3.6.x
+GDAL_VER=3.6.4+kx-ci364-git20240110.6c7ffa44c2
 
 source /etc/lsb-release
 
@@ -10,17 +12,10 @@ apt-get install -y --no-install-recommends \
     file \
     libcurl4-openssl-dev \
     libgeotiff-dev \
-    libgdal-dev
-
-declare -a CMAKE_EXTRA=()
-
-if [ "$DISTRIB_CODENAME" == "bionic" ]; then
-    apt-get install -y --no-install-recommends gcc-8 g++-8
-    CMAKE_EXTRA+=(
-        "-DCMAKE_C_COMPILER=gcc-8"
-        "-DCMAKE_CXX_COMPILER=g++-8"
-    )
-fi
+    "libgdal-dev=${GDAL_VER}" \
+    "libgdal32=${GDAL_VER}" \
+    "gdal-plugins=${GDAL_VER}" \
+    "gdal-data=${GDAL_VER}"
 
 # install modern cmake
 CMAKE_VER=3.24.1
@@ -35,7 +30,6 @@ cd /mnt/build
 # configure
 echo "+++ Configuring..."
 cmake -S /src -B . \
-    "${CMAKE_EXTRA[@]}" \
     -DCMAKE_BUILD_TYPE=Release \
     -DBUILD_PLUGIN_PGPOINTCLOUD=OFF \
     -DWITH_TESTS=NO \
