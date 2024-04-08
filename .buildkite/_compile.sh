@@ -2,8 +2,6 @@
 set -eu
 
 DEB_VER=$1
-# pinned because there's also a 3.8.x in the repos and we still want to build against 3.6.x
-MIN_GDAL_VER=3.6.4+kx-ci364-git20240110.6c7ffa44c2
 
 source /etc/lsb-release
 
@@ -12,10 +10,9 @@ apt-get install -y --no-install-recommends \
     file \
     libcurl4-openssl-dev \
     libgeotiff-dev \
-    "libgdal-dev=${MIN_GDAL_VER}" \
-    "libgdal32=${MIN_GDAL_VER}" \
-    "gdal-plugins=${MIN_GDAL_VER}" \
-    "gdal-data=${MIN_GDAL_VER}"
+    libgdal-dev \
+    gdal-plugins \
+    gdal-data
 
 # install modern cmake
 CMAKE_VER=3.24.1
